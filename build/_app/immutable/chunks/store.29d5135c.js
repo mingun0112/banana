@@ -1,0 +1,1 @@
+import{j as t,w as n}from"./singletons.bc90f49e.js";function f(s){return(s==null?void 0:s.length)!==void 0?s:Array.from(s)}const m=t("goto"),e=n({}),g=n(""),u=n([]);export{f as e,g as f,m as g,e as i,u as t};
