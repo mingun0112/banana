@@ -1,6 +1,6 @@
 <script lang="ts">
 	// import type { List } from 'postcss/lib/list';
-    import { itemStore,fileName } from '$lib/store';
+    import { itemStore,fileName, trashList } from '$lib/store';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
 
@@ -27,6 +27,8 @@
     //let pallette=['#008080','#FFD700','#4169E1','#C0C0C0','#50C878','#2E0854','#FF6EC7']
     let colorpicker:number;
     let filter = false;
+    let trash = false;
+    
 
     const toggleFilter=async()=>{
         filter = !filter;
@@ -62,9 +64,20 @@
 
     const postServer = async() => {
         if (keys.length > 0) {
+            
         filepath=keys[currentIndex];
         filevalue=value[currentIndex];
+        //console.log("test",trashList.includes(filepath))
+        const trashList=$trashList;
 
+        if (trashList.includes(filepath)){
+            console.log("in trash")
+            imageSrc='./banana.png';
+            console.log({trashList})
+            return;
+        }
+        
+       
         const res = await fetch('http://192.168.0.160:9900/post', {
             method: 'POST',
             body: JSON.stringify({filepath, filevalue}),
@@ -156,12 +169,29 @@
     const goHomeClick=()=>{
         goto('/');
         itemStore.set({});
+        trashList.set([]);
     }
+
+
 
     function handleRangeChange(event) {
         currentIndex = event.target.value;
         postServer();
         loadItemData();
+    }
+
+    function trashFunce(event){
+        trash= true;
+        event.preventDefault();
+    }
+    function trashAccept(event){
+        trash= false;
+        $trashList = [...$trashList, keys[currentIndex]];
+        //$trashList.push(keys[currentIndex])
+        console.log(trashList)
+    }
+    function trashDeny(event){
+        trash= false;
     }
 
     onMount(() => {
@@ -223,23 +253,25 @@
         <button tabindex="0" class="btn btn-square btn-ghost">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
         </button>
+        {#if $trashList.length > 0}
         <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
-          <li>
-            <a class="justify-between">
-              Profile
-              <span class="badge">New</span>
-            </a>
-          </li>
-          <li><a>Settings</a></li>
-          <li><a>Logout</a></li>
+            {#each $trashList as item}
+                <li>{item}</li>
+            {/each}
         </ul>
-      </div>
+        {:else}
+            <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+                <li><p>No items in the trash list.</p></li>
+            </ul>
+        {/if}
+    </div>
 
   </div>
 
 <div>
 
 </div>
+
 <div class="flex flex-col ">
     <div class="flex justify-center">
         <p>{$fileName}</p>
@@ -255,8 +287,8 @@
 </div>
 <div class="flex justify-center">
     <div class="justify-center">
-        <div class="join grid grid-cols-3">
-            <button on:click={onPrevClick} class="join-item btn btn-outline">Previous page</button>
+        <div class="join grid grid-cols-3 {trash ? 'trash' : ''}">
+            <button on:click={onPrevClick} class="join-item btn btn-outline" >Previous page</button>
             <div class=" dropdown dropdown-end">
                 <button  tabindex="0" class="join-item  btn w-full">Page {currentIndex}</button>
                 <ul tabindex="0" class="z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-full">
@@ -281,17 +313,35 @@
 
         <!-- <label>{currentIndex < Object.keys($itemStore).length ? Object.keys($itemStore)[currentIndex] : 'No data'}</label>
         <label>{currentIndex < Object.keys($itemStore).length ? Object.values($itemStore)[currentIndex] : 'No data'}</label> -->
-        <div class='relative w-full h-full mt-12'>
-            <img src={imageSrc} alt="map" width="1280" height="720" >
+        <div class='relative w-full mt-12 {trash ? 'trash' : ''}'>
+            <img src={imageSrc} alt="map" width="1280" height="720">
             <!-- js rendering option -->
             <!-- <canvas id='mainCanvas' bind:this={mainCanvas} class="absolute top-0 left-0"  width="1280" height="720" ></canvas> -->
-            <div class="absolute top-0 left-0 grid grid-cols-2 top-0 left-0 w-full h-full" >
+            <div class="absolute top-0 left-0 grid grid-cols-2 top-0 left-0 w-full h-full " >
                 <button on:click={onPrevClick} ></button>
                 <button on:click={onNextClick}></button>
             </div>
         </div>
+        {#if (!trash)}
+        <div class="mt-2">
+            <button class="btn btn-square btn-error"  on:click={trashFunce}>
+                <svg fill="rgb(255,255,255)" height="45" width="35" viewBox="0 0 850 1000" xmlns="http://www.w3.org/2000/svg"><path d="M0 281.296l0 -68.355q1.953 -37.107 29.295 -62.496t64.449 -25.389l93.744 0l0 -31.248q0 -39.06 27.342 -66.402t66.402 -27.342l312.48 0q39.06 0 66.402 27.342t27.342 66.402l0 31.248l93.744 0q37.107 0 64.449 25.389t29.295 62.496l0 68.355q0 25.389 -18.553 43.943t-43.943 18.553l0 531.216q0 52.731 -36.13 88.862t-88.862 36.13l-499.968 0q-52.731 0 -88.862 -36.13t-36.13 -88.862l0 -531.216q-25.389 0 -43.943 -18.553t-18.553 -43.943zm62.496 0l749.952 0l0 -62.496q0 -13.671 -8.789 -22.46t-22.46 -8.789l-687.456 0q-13.671 0 -22.46 8.789t-8.789 22.46l0 62.496zm62.496 593.712q0 25.389 18.553 43.943t43.943 18.553l499.968 0q25.389 0 43.943 -18.553t18.553 -43.943l0 -531.216l-624.96 0l0 531.216zm62.496 -31.248l0 -406.224q0 -13.671 8.789 -22.46t22.46 -8.789l62.496 0q13.671 0 22.46 8.789t8.789 22.46l0 406.224q0 13.671 -8.789 22.46t-22.46 8.789l-62.496 0q-13.671 0 -22.46 -8.789t-8.789 -22.46zm31.248 0l62.496 0l0 -406.224l-62.496 0l0 406.224zm31.248 -718.704l374.976 0l0 -31.248q0 -13.671 -8.789 -22.46t-22.46 -8.789l-312.48 0q-13.671 0 -22.46 8.789t-8.789 22.46l0 31.248zm124.992 718.704l0 -406.224q0 -13.671 8.789 -22.46t22.46 -8.789l62.496 0q13.671 0 22.46 8.789t8.789 22.46l0 406.224q0 13.671 -8.789 22.46t-22.46 8.789l-62.496 0q-13.671 0 -22.46 -8.789t-8.789 -22.46zm31.248 0l62.496 0l0 -406.224l-62.496 0l0 406.224zm156.24 0l0 -406.224q0 -13.671 8.789 -22.46t22.46 -8.789l62.496 0q13.671 0 22.46 8.789t8.789 22.46l0 406.224q0 13.671 -8.789 22.46t-22.46 8.789l-62.496 0q-13.671 0 -22.46 -8.789t-8.789 -22.46zm31.248 0l62.496 0l0 -406.224l-62.496 0l0 406.224z"/></svg>
+            </button>
+        </div>
+        {/if}
+        {#if (trash)}
         
+            <div class="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>이미지를 삭제하시겠습니까?</span>
+                <div>
+                <button class="btn btn-sm" on:click={trashDeny}>Deny</button>
+                <button class="btn btn-sm btn-primary" on:click={trashAccept}>Accept</button>
+                </div>
+            </div>
 
+        {/if}
+        
     </div>
 
 </div>
@@ -299,6 +349,9 @@
 <style>
     .text-stroke {
   -webkit-text-stroke: 1px #713f12;
+}
+.trash{
+    pointer-events: none;
 }
 
 

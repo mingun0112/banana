@@ -134,8 +134,8 @@
     <div class="flex-none">
         <img src="banana.png" alt="logo" class="w-32 ml-5">
     </div>
-    <div class="flex-none">
-        <a class="btn btn-ghost text-stroke normal-case text-5xl text-yellow-300">Hi, I am 바나나!</a>
+    <div class="flex-none mt-8">
+        <a class="btn btn-ghost text-stroke normal-case text-5xl text-yellow-300">Hi, I am 바나나 입니다!</a>
     </div>
     {#if (!files)}
         <div class="modal-box flex flex-col items-center justify-center mt-10">
